@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CivicTrack prototype</title>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F3F6F8;--surface:#FFFFFF;--ink:#14213D;--muted:#566377;--line:#D6DEE6;--accent:#0B7A7C;--accent-ink:#FFFFFF;--s0:#8A94A6;--s1:#3F6FD8;--s2:#8A5BD1;--s3:#D98A1E;--s4:#2E7D4F;--warn:#B3261E;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1622;--surface:#172233;--ink:#E8EEF5;--muted:#9AA8BA;--line:#2A3A50;--accent:#3CC4C6;--accent-ink:#06222A;--s0:#8A94A6;--s1:#7FA2FF;--s2:#B994F2;--s3:#F0B04A;--s4:#5FC48A;--warn:#FF8A80}}
+:root[data-theme="dark"]{--bg:#0E1622;--surface:#172233;--ink:#E8EEF5;--muted:#9AA8BA;--line:#2A3A50;--accent:#3CC4C6;--accent-ink:#06222A;--s1:#7FA2FF;--s2:#B994F2;--s3:#F0B04A;--s4:#5FC48A;--warn:#FF8A80}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0;letter-spacing:.01em}
+h1 small{display:block;font-size:13px;font-weight:400;color:var(--muted)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{border:0;background:none;color:var(--ink);padding:9px 16px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:20px;display:grid;gap:20px;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+@media (max-width:820px){main{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+h2{font-size:17px;margin:0 0 10px}
+.map{width:100%;height:auto;display:block;border-radius:8px;background:var(--bg);cursor:crosshair}
+.map .road{stroke:var(--line);stroke-width:9;fill:none}
+.map .road2{stroke:var(--surface);stroke-width:7;fill:none}
+.map .park{fill:var(--s4);opacity:.18}
+.map .river{stroke:var(--s1);opacity:.28;stroke-width:14;fill:none}
+.pin{cursor:pointer}
+.pin text{font-size:10px;font-weight:700;fill:#fff;text-anchor:middle;pointer-events:none}
+.pin.sel circle{stroke:var(--ink);stroke-width:3}
+label{display:block;font-weight:700;margin:12px 0 4px;font-size:14px}
+select,input[type=text],textarea{width:100%;font:inherit;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+textarea{min-height:70px;resize:vertical}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{border:0;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:700;padding:10px 16px;border-radius:8px;cursor:pointer}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink);font-weight:400}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.dupe{border:2px solid var(--s3);border-radius:8px;padding:10px 12px;margin-top:12px}
+.dupe p{margin:0 0 8px}
+.stages{display:flex;gap:3px;margin:6px 0 2px}
+.stages i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.stages i.on{background:var(--c)}
+.issue{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;background:var(--bg)}
+.issue.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+.issue b{display:block}
+.meta{color:var(--muted);font-size:14px}
+.tag{display:inline-block;padding:1px 8px;border-radius:99px;font-size:13px;font-weight:700;color:var(--accent-ink);background:var(--c)}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.stat{border:1px solid var(--line);border-radius:10px;padding:10px}
+.stat strong{display:block;font-size:24px}
+.stat span{color:var(--muted);font-size:14px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filters select{width:auto}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;max-width:90%;opacity:0;pointer-events:none;transition:opacity .25s}
+#toast.show{opacity:1}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1>CivicTrack<small>Report it. Verify it. See it resolved.</small></h1>
+  <div class="seg" role="group" aria-label="Choose view">
+    <button id="vRes" aria-pressed="true">Resident</button>
+    <button id="vTeam" aria-pressed="false">Local team</button>
+  </div>
+</header>
+<main>
+  <section class="panel" aria-label="Map">
+    <h2 id="mapTitle">Tap the map to pin the problem</h2>
+    <svg id="map" class="map" viewBox="0 0 400 300" role="img" aria-label="Ward map with reported issues">
+      <rect class="park" x="250" y="30" width="110" height="80" rx="10"/>
+      <path class="river" d="M0 250 C100 215 160 285 260 245 S380 230 400 240"/>
+      <path class="road" d="M0 100H400M0 180H400M110 0V300M280 0V300"/>
+      <path class="road2" d="M0 100H400M0 180H400M110 0V300M280 0V300"/>
+      <g id="pins"></g><g id="draft"></g>
+    </svg>
+    <p class="hint">Residents add a photo and a map point. Pins show status colour: grey submitted, blue verified, purple assigned, amber in progress, green resolved.</p>
+  </section>
+
+  <section class="panel" id="resPanel" aria-label="Report an issue">
+    <h2>Report an issue</h2>
+    <label for="cat">Category</label>
+    <select id="cat"><option>Waterlogging</option><option>Broken streetlight</option><option>Waste hotspot</option><option>Resource shortage</option></select>
+    <label for="desc">What is happening?</label>
+    <textarea id="desc" placeholder="e.g. Drain blocked outside the library gate"></textarea>
+    <div class="row" style="margin-top:12px">
+      <button class="btn ghost" id="photo">Attach photo</button>
+      <span class="meta" id="photoNote">No photo yet</span>
+    </div>
+    <p class="hint" id="locNote">Location: not set. Tap the map.</p>
+    <div id="dupe" class="dupe hide"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="submit">Submit report</button>
+    </div>
+  </section>
+
+  <section class="panel hide" id="teamPanel" aria-label="Team dashboard">
+    <h2>Team dashboard</h2>
+    <div class="stats" id="stats"></div>
+    <div class="filters">
+      <select id="fCat" aria-label="Filter by category"><option value="">All categories</option><option>Waterlogging</option><option>Broken streetlight</option><option>Waste hotspot</option><option>Resource shortage</option></select>
+      <select id="fSt" aria-label="Filter by status"><option value="">All statuses</option><option value="open">Open only</option></select>
+    </div>
+  </section>
+
+  <section class="panel" style="grid-column:1/-1" aria-label="Issues">
+    <h2 id="listTitle">Issues in this ward</h2>
+    <div id="list"></div>
+  </section>
+</main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script>
+var ST=["Submitted","Verified","Assigned","In progress","Resolved"],TEAMS=["Unassigned","Drainage crew","Electrical crew","Sanitation crew","Ward office"];
+var issues=[
+{id:1,cat:"Waterlogging",desc:"Water pooling at the underpass after rain",x:80,y:150,st:2,reports:3,age:2,team:1,days:null},
+{id:2,cat:"Broken streetlight",desc:"Three lamps out along the library road",x:200,y:100,st:1,reports:1,age:1,team:0,days:null},
+{id:3,cat:"Waste hotspot",desc:"Overflowing bins behind the market",x:330,y:215,st:3,reports:5,age:4,team:3,days:null},
+{id:4,cat:"Waterlogging",desc:"Blocked drain near the park gate",x:310,y:130,st:4,reports:2,age:6,team:1,days:3},
+{id:5,cat:"Resource shortage",desc:"Community tap has no water since morning",x:150,y:215,st:0,reports:1,age:0,team:0,days:null}];
+var nextId=6,view="res",draft=null,hasPhoto=false,sel=null,ignoreDupe=null;
+var $=function(i){return document.getElementById(i)};
+var col=function(s){return "var(--s"+s+")"};
+function toast(t){var e=$("toast");e.textContent=t;e.classList.add("show");clearTimeout(toast.t);toast.t=setTimeout(function(){e.classList.remove("show")},2600)}
+function findDupe(){
+  if(!draft)return null;var c=$("cat").value;
+  return issues.find(function(i){return i.cat===c&&i.st<4&&i.age<=7&&Math.hypot(i.x-draft.x,i.y-draft.y)<55})||null}
+function drawMap(){
+  var g=$("pins");g.innerHTML="";
+  var vis=view==="team"?filtered():issues;
+  vis.forEach(function(i){
+    var n=document.createElementNS("http://www.w3.org/2000/svg","g");
+    n.setAttribute("class","pin"+(sel===i.id?" sel":""));
+    n.setAttribute("tabindex","0");n.setAttribute("role","button");
+    n.setAttribute("aria-label",i.cat+", "+ST[i.st]);
+    n.innerHTML='<circle cx="'+i.x+'" cy="'+i.y+'" r="'+(11+Math.min(i.reports,5))+'" fill="'+col(i.st)+'"/><text x="'+i.x+'" y="'+(i.y+3.5)+'">'+i.reports+'</text>';
+    var pick=function(){sel=i.id;render();var el=document.getElementById("is"+i.id);if(el)el.scrollIntoView({block:"nearest"})};
+    n.addEventListener("click",function(e){e.stopPropagation();pick()});
+    n.addEventListener("keydown",function(e){if(e.key==="Enter")pick()});
+    g.appendChild(n)});
+  $("draft").innerHTML=draft&&view==="res"?'<circle cx="'+draft.x+'" cy="'+draft.y+'" r="9" fill="none" stroke="var(--accent)" stroke-width="3" stroke-dasharray="4 3"/>':""}
+function filtered(){
+  var c=$("fCat").value,s=$("fSt").value;
+  return issues.filter(function(i){return(!c||i.cat===c)&&(!s||i.st<4)})}
+function stages(i){var h='<div class="stages" style="--c:'+col(i.st)+'" aria-hidden="true">';
+  for(var k=0;k<5;k++)h+='<i class="'+(k<=i.st?"on":"")+'"></i>';return h+"</div>"}
+function drawList(){
+  var list=view==="team"?filtered():issues.slice().sort(function(a,b){return b.id-a.id});
+  if(!list.length){$("list").innerHTML='<p class="meta">No issues match these filters. Clear a filter to see more.</p>';return}
+  $("list").innerHTML=list.map(function(i){
+    var h='<div class="issue'+(sel===i.id?" sel":"")+'" id="is'+i.id+'"><div class="row" style="justify-content:space-between"><b>'+i.cat+'</b><span class="tag" style="--c:'+col(i.st)+'">'+ST[i.st]+'</span></div>'+
+    '<div>'+i.desc+'</div>'+stages(i)+'<div class="meta">'+i.reports+(i.reports>1?" reports linked":" report")+" · "+(i.age?i.age+"d ago":"today")+(i.days?" · resolved in "+i.days+" days":"")+'</div>';
+    if(view==="team"){
+      h+='<div class="row" style="margin-top:8px"><select data-a="'+i.id+'" aria-label="Assign team">'+TEAMS.map(function(t,k){return'<option value="'+k+'"'+(k===i.team?" selected":"")+'>'+t+'</option>'}).join("")+'</select>';
+      h+=i.st<4?'<button class="btn" data-n="'+i.id+'">Mark '+ST[i.st+1].toLowerCase()+'</button>':'<span class="meta">Closed with resolution note</span>';
+      h+="</div>"}
+    return h+"</div>"}).join("")}
+function drawStats(){
+  var open=issues.filter(function(i){return i.st<4}),done=issues.filter(function(i){return i.days});
+  var avg=done.length?(done.reduce(function(a,i){return a+i.days},0)/done.length).toFixed(1):"–";
+  var cnt={};issues.forEach(function(i){cnt[i.cat]=(cnt[i.cat]||0)+i.reports});
+  var top=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]})[0];
+  $("stats").innerHTML='<div class="stat"><strong>'+open.length+'</strong><span>Open issues</span></div><div class="stat"><strong>'+avg+'d</strong><span>Avg. time to resolve</span></div><div class="stat"><strong style="font-size:16px">'+top+'</strong><span>Top hotspot</span></div>'}
+function drawDupe(){
+  var d=findDupe(),box=$("dupe");
+  if(!d||ignoreDupe===d.id){box.classList.add("hide");return}
+  box.classList.remove("hide");
+  box.innerHTML='<p><b>Similar report nearby.</b> “'+d.desc+'” was reported '+(d.age?d.age+" days ago":"today")+'. Link yours to it instead of creating a new issue?</p><div class="row"><button class="btn" id="link">Link to existing issue</button><button class="btn ghost" id="keep">This is different</button></div>';
+  $("link").onclick=function(){d.reports++;sel=d.id;reset();render();toast("Linked. You will get updates on this issue.")};
+  $("keep").onclick=function(){ignoreDupe=d.id;drawDupe()}}
+function reset(){draft=null;hasPhoto=false;$("desc").value="";$("photoNote").textContent="No photo yet";$("locNote").textContent="Location: not set. Tap the map.";ignoreDupe=null}
+function render(){
+  $("resPanel").classList.toggle("hide",view!=="res");
+  $("teamPanel").classList.toggle("hide",view!=="team");
+  $("vRes").setAttribute("aria-pressed",view==="res");$("vTeam").setAttribute("aria-pressed",view==="team");
+  $("mapTitle").textContent=view==="res"?"Tap the map to pin the problem":"Issues by location";
+  $("listTitle").textContent=view==="res"?"Issues in this ward":"Open work queue";
+  drawMap();drawList();drawDupe();if(view==="team")drawStats()}
+$("map").addEventListener("click",function(e){
+  if(view!=="res")return;
+  var r=this.getBoundingClientRect();
+  draft={x:Math.round((e.clientX-r.left)/r.width*400),y:Math.round((e.clientY-r.top)/r.height*300)};
+  ignoreDupe=null;$("locNote").textContent="Location: pinned on map ("+draft.x+", "+draft.y+")";render()});
+$("cat").onchange=function(){ignoreDupe=null;drawDupe()};
+$("photo").onclick=function(){hasPhoto=true;$("photoNote").textContent="photo_001.jpg attached"};
+$("submit").onclick=function(){
+  if(!draft){toast("Tap the map to set a location first.");return}
+  if(!hasPhoto){toast("Attach a photo so the team can verify it.");return}
+  var d=$("desc").value.trim();if(!d){toast("Describe the problem in a few words.");return}
+  var n={id:nextId++,cat:$("cat").value,desc:d,x:draft.x,y:draft.y,st:0,reports:1,age:0,team:0,days:null};
+  issues.push(n);sel=n.id;reset();render();toast("Submitted. Status: Submitted. We will notify you at each step.")};
+$("vRes").onclick=function(){view="res";render()};
+$("vTeam").onclick=function(){view="team";render()};
+$("fCat").onchange=render;$("fSt").onchange=render;
+$("list").addEventListener("click",function(e){
+  var b=e.target.closest("[data-n]");
+  if(b){var i=issues.find(function(x){return x.id==b.dataset.n});i.st++;
+    if(i.st===4)i.days=Math.max(1,i.age);
+    render();toast("Reporter notified: “"+i.cat+"” is now "+ST[i.st].toLowerCase()+".");return}
+  var c=e.target.closest(".issue");if(c&&!e.target.closest("select")){sel=+c.id.slice(2);drawMap();drawList()}});
+$("list").addEventListener("change",function(e){
+  var s=e.target.closest("[data-a]");if(!s)return;
+  var i=issues.find(function(x){return x.id==s.dataset.a});i.team=+s.value;
+  if(i.team&&i.st<2)i.st=2;render();toast("Assigned to "+TEAMS[i.team]+".")});
+render();
+</script>
+</body>
+</html>
